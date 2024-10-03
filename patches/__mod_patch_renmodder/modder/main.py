@@ -12,7 +12,6 @@ import json
 import renpy # type: ignore
 import renpy.game as game # type: ignore
 import pygame_sdl2 as pygame
-from threading import Timer
 
 import renpy.renmodder.mod_api
 

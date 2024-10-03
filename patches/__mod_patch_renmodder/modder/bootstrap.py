@@ -5,7 +5,7 @@ import os
 import subprocess
 from .main import main
 from .mod import Mod
-from renpy.renmodder.config import *
+from renpy.renmodder.config import MODS_PATH
 
 # import renpy.display
 
@@ -116,21 +116,15 @@ def run(renpy_base):
             for line in file_content.split("\n"):
                 if "(Mod)" in line:
                     is_mod = True
-                    class_name = line.replace("(Mod):", '').replace("class ", '')
-                    # From:
-                    # ```python
-                    # ...
-                    # class ThisIsMod(Mod):
-                    # ...
-                    # ```
-                    # To:
-                    # ThisIsMod
+                    class_name = line.replace("(Mod):", '').replace("class ", '') # class ThisIsMod(Mod): -> ThisIsMod
                     break
 
             if is_mod:
-                exec(file_content, globals(), locals())
-                exec(f"mod = {class_name}()")
-                mods.append(mod)
+                mod_namespace = {} # Like locals()
+                exec(file_content, globals(), mod_namespace)
+                exec(f"mod = {class_name}()", globals(), mod_namespace)
+                mods.append(mod_namespace['mod'])
+
 
     for mod in mods:
         log(f"Bootstraping: {mod.name} ...")

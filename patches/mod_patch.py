@@ -42,6 +42,37 @@ INIT_PATCHED = f"""for m in sys.modules.values():
             if not list(sys.modules.keys())[list(sys.modules.values()).index(m)].startswith('renpy.renmodder'): # {PATCH_IDETEFICATOR} RENMODDER MOD PATCH
                 self.backup_module(m)""" 
 
+DEV_TEST_MOD = """
+# import renpy.renmodder.mod_api
+
+
+class TestMod(Mod):
+    def __mod_log(self, text: str):
+        print(f"[RENMODDER] [{self.name}] ={self.id}= {text}")
+
+    def __init__(self) -> None:
+        self.id = id(self)
+        self.name = "DME"
+        self.version = 1.0
+
+    def bootstrap(self): pass
+    def bootstrap_end(self): pass
+    def main(self): pass
+
+    def main_end(self):
+        global renpy
+        
+        self.__mod_log("Loading dev mode...")
+        renpy.config.developer = True
+        renpy.config.default_developer = True
+
+    def unload(self):
+        global renpy
+        self.__mod_log("Disabling dev mode...")
+        renpy.config.developer = False
+        renpy.config.default_developer = False
+"""
+
 lib = '/renpy/common/00library.rpy'
 bootstrap = '/renpy/bootstrap.py'
 renmodder = '/renpy/renmodder'
@@ -143,7 +174,18 @@ def patch_game(game_path: str) -> bool:
         print("OK")
     else:
         log("(*) Renmodder folder is founded. Skipping copying files...")
-    
+
+    if "renmodder_mods" in listdir(game_path) and \
+         len(listdir(game_path+"/renmodder_mods/")) < 1:
+        log("(*) Installing DME mod...", end='')
+
+        with open(f"{game_path}/renmodder_mods/", "w") as mod:
+            mod.write(DEV_TEST_MOD)
+        
+        print("OK")
+
+    else:
+        log("(*) DME.py founded. Skipping...")
 
     return True
 
@@ -194,6 +236,10 @@ def unpatch_game(game_path: str) -> bool:
 
     log("(*) Deleting renmodder folder...", end='')
     rmtree(renmodder, True)
+    log("OK", print_log=False)
+
+    log("(*) Deleting renmodder_mods folder...", end='')
+    rmtree(game_path+"/renmodder_mods/", True)
     log("OK", print_log=False)
 
     return True
