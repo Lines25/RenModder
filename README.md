@@ -1,4 +1,6 @@
 # RenModder
+![Loading logo...](https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True)
+
 An tool to patch and mod games that powerd by Ren'Py. This tool can patch games for:
 - Mod support
 - Dev Mode enable
@@ -63,6 +65,8 @@ NOTE: Replace "PATH/TO/YOUR/GAME" and "C://PATH/TO/YOUR/GAME" with path to game 
 If you want to help this project and you aren't Python developer, you can log in into your GitHub account and star this project
 
 If you want to help this project and you are Python developer, you can create Pull Request and help with developing with project
+# How to make mods
+### For this read DEVELOPERMENT.md
 # Thanks
 Thanks lazy me that starts working for this project. 
 

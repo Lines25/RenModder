@@ -18,9 +18,15 @@ class Mod:
 
     def bootstrap(self):
         self.__mod_log("BOOTSTRAPing...")
+    
+    def bootstrap_end(self):
+        self.__mod_log("END BOOTSTRAPing...")
 
     def main(self):
         self.__mod_log("Running in main()...")
+
+    def main_end(self):
+        self.__mod_log("Running in main() at the end...")
 
     def unload(self):
         self.__mod_log("Unloading...")

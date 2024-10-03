@@ -109,6 +109,11 @@ def run(restart):
 
     log_clock("Running {}".format(start_label))
 
+    global mods
+    for mod in renpy.store.mods:
+        main_log(f"Main Ending: {mod.name}...")
+        mod.main_end()
+
     renpy.execution.run_context(True)
 
 
@@ -171,6 +176,8 @@ def choose_variants():
 
 
 def main(mods):
+    renpy.store.mods = mods
+
     renpy.renmodder.mod_api.load_mod_api()
     global win
 

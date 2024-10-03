@@ -309,6 +309,9 @@ You may be using a system install of python. Please run {0}.sh,
                 if not os.path.exists(renpy.config.logdir):
                     os.makedirs(renpy.config.logdir, 0o777)
 
+                for mod in mods:
+                    log(f"End bootstraping: {mod.name} ...")
+                    mod.bootstrap_end()
                 log("MAIN")
                 main(mods)
 
@@ -347,6 +350,10 @@ You may be using a system install of python. Please run {0}.sh,
 
     finally:
         log("Triggered shutdown...")
+        log("Shutdowning mods...")
+        for mod in mods:
+            log(f"Unloading: {mod.name}")
+            mod.unload()
 
         # if "RENPY_SHUTDOWN_TRACE" in os.environ:
         #     enable_trace(int(os.environ["RENPY_SHUTDOWN_TRACE"]))
