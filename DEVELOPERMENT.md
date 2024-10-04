@@ -91,11 +91,41 @@ renpy.renmodder.main() is just renpy.main() but with changes and runs custom ren
 
 ### ***That's all. All other code is just an Ren'Py original code, but added more logging***
 
+<h3 style="text-align: center;">Without RenModder patched</h3>
+
+```mermaid
+%%{init: {'theme': 'black', 'themeVariables': { 'fontFamily': 'Arial', 'fontSize': '20px', 'lineHeight': '1.5', 'textAlign': 'center' }}}%% 
+flowchart LR;
+    main["renpy.main.main()"] --> renpy.bootstrap.bootstrap("renpy.bootstrap.bootstrap()");
+    renpy.bootstrap.bootstrap -- "Bootstrap Ren'Py init" --> renpy.main("renpy.main.main()");
+    renpy.main --> other("Other Ren'Py code (e.g., executing .rpy/.rpyc files)");
+```
+
+<h3 style="text-align: center;">With RenModder patched</h3>
+
+```mermaid
+%%{init: {'theme': 'black', 'themeVariables': { 'fontFamily': 'Arial', 'fontSize': '20px', 'lineHeight': '1.5', 'textAlign': 'center' }}}%% 
+graph LR;
+    main("renpy.main.main()") --> renpy.bootstrap.bootstrap("renpy.bootstrap.bootstrap()");
+    
+    renpy.bootstrap.bootstrap{"Is Renmodder enabled?
+                               (If real_one == True)"} -- NO --> renpy.main("renpy.main.main()");
+    
+    renpy.bootstrap.bootstrap -- "Make all sys.modules global" --> renmodder.bootstrap("renpy.renmodder.bootstrap.run()");
+    
+    renmodder.bootstrap --> renmodder.main("renpy.renmodder.main.main()");
+    
+    renpy.main --> other("Other Ren'Py code (e.g., executing .rpy/.rpyc files)");
+    renmodder.main --> other;
+
+```
+
+
 ### How RenModder loads/unloads mods ?
 RenModder have a list with Mod() classed loaded mods that called `mods` And in ALL RenModder code it's uses this simple snippet:
 ```python
 for mod in mods:
-    LOG_FUNC(f"[REPLACE WITH MSG]: {mod.name} ...")
+    LOG_FUNC(f"(REPLACE WITH MSG): {mod.name} ...")
     mod.FUNC_TO_RUN()
 ```
 Example: `patches/__mod_patch_renmodder/main.py`

@@ -1,78 +1,68 @@
 # RenModder
-![Loading logo...](https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True)
+<div style="display: flex; align-items: center;">
+  <div style="flex: 1;">
+    <p><strong>RenModder</strong> is a tool for modding and patching Ren'Py games. Features include:</p>
+    <ul>
+      <li>Mod support</li>
+      <li>Developer Mode enablement</li>
+    </ul>
+    <p>Whether you're a developer or a fan, RenModder makes modding simple!</p>
+    <p><strong>Current goal:</strong> Add mod support across all platforms (Windows, Linux, MacOS).</p>
+  </div>
+  <div>
+    <img src="https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True" alt="RenModder Logo" width="150">
+  </div>
+</div>
 
-An tool to patch and mod games that powerd by Ren'Py. This tool can patch games for:
-- Mod support
-- Dev Mode enable
 
-If you are developer that want to mod som game or just want to add mod support for your favorite game, this tool for you !
+Whether you're a developer wanting to mod a game or just looking to add mod support to your favorite game, this tool is for you!
 
-***For now, project aim to add mod support for all platforms (like Windows, Linux and MacOS)***
+***Current project goal: add mod support across all platforms (Windows, Linux, MacOS).***
 
-# Installation
-## Python3 install
-First, you need to download python (3.7+) from [official website](https://python.org) or with your package manager:
-### Arch Linux
-`sudo pacman -S python3`
-### Debian-based (Debian, Ubuntu, Kali, etc)
-`sudo apt install python3`
-### Windows
-1. Go to website
+## Installation
+### Python3
+First, download Python (3.7+) from the [official website](https://python.org) or using your package manager:
 
-2. Download installer
+- **Arch Linux:** `sudo pacman -S python3`
+- **Debian/Ubuntu/Kali:** `sudo apt install python3`
+- **Windows:** Download and install from the [official website](https://python.org). Be sure to check all options (add to path, inc. path limit, etc).
+- **MacOS:** Install [HomeBrew](https://brew.sh/), then run: `brew install python3`
 
-3. Run it
+## Patching Games
+Download this repository or run `git clone https://github.com/Lines115/RenModder.git` in your terminal.
 
-3.1. !! Check all !! (add to path, inc. path limit, etc)
+Open a terminal in the unzipped folder, and you're ready to patch or unpatch with the following commands:
 
-4. Run install
-### MacOS
-First, you need to download [HomeBrew](https://brew.sh/), then open console and type:
-`brew install python3`
-## Patch your games
-Download this repository and unzip it anywere (or run `git clone https://github.com/Lines115/RenModder.git` in console, if you have installed git).
+### Enable Developer Mode
+- **Linux/MacOS:** `python3 main.py "PATH/TO/YOUR/GAME" dev patch`
+- **Windows:** `py main.py "C://PATH/TO/YOUR/GAME" dev patch`
 
-Open console in unzipped folder and here you are. You can patch and unpatch like this:
-### Enable Dev Mode
-On Linux/MacOS:
-`python3 main.py "PATH/TO/YOUR/GAME" dev patch`
+### Disable Developer Mode
+- **Linux/MacOS:** `python3 main.py "PATH/TO/YOUR/GAME" dev unpatch`
+- **Windows:** `py main.py "C://PATH/TO/YOUR/GAME" dev unpatch`
 
-On Windows:
-`py main.py "C://PATH/TO/YOUR/GAME" dev patch`
-### Disable Dev Mode
+### Add Mod Support
+- **Linux/MacOS:** `python3 main.py "PATH/TO/YOUR/GAME" mod patch`
+- **Windows:** `py main.py "C://PATH/TO/YOUR/GAME" mod patch`
 
-On Linux/MacOS:
-`python3 main.py "PATH/TO/YOUR/GAME" dev unpatch`
+### Remove Mod Support
+- **Linux/MacOS:** `python3 main.py "PATH/TO/YOUR/GAME" mod unpatch`
+- **Windows:** `py main.py "C://PATH/TO/YOUR/GAME" mod unpatch`
 
-On Windows:
-`py main.py "C://PATH/TO/YOUR/GAME" dev unpatch`
-### Add mod support
+> **Note:** Replace `"PATH/TO/YOUR/GAME"` with the actual path to the game you want to patch.
 
-On Linux/MacOS:
-`python3 main.py "PATH/TO/YOUR/GAME" mod patch`
+## Contributing
+- **Not a developer?** You can support the project by starring it on GitHub.
+- **Developer?** Feel free to contribute via Pull Requests.
 
-On Windows:
-`py main.py "C://PATH/TO/YOUR/GAME" mod patch`
-### Delete mod support
+## Making Mods
+Check out [DEVELOPERMENT.md](DEVELOPERMENT.md) for modding guidelines.
 
-On Linux/MacOS:
-`python3 main.py "PATH/TO/YOUR/GAME" mod unpatch`
+## Acknowledgements
+Thanks to my lazy self for starting this project and special thanks to **Tom Rothamel** (PyTom) for creating Ren'Py!
 
-On Windows:
-`py main.py "C://PATH/TO/YOUR/GAME" mod unpatch`
-NOTE: Replace "PATH/TO/YOUR/GAME" and "C://PATH/TO/YOUR/GAME" with path to game that you want to patch !
-# Help
-If you want to help this project and you aren't Python developer, you can log in into your GitHub account and star this project
-
-If you want to help this project and you are Python developer, you can create Pull Request and help with developing with project
-# How to make mods
-### For this read DEVELOPERMENT.md
-# Thanks
-Thanks lazy me that starts working for this project. 
-
-Thanks for Tom Rothamel (AKA "PyTom") for creating Ren'Py !
-
-# Tests
-Tested on:
-- Starry Flowers 1.7 (Windows+Linux+MacOS build, maybe) by NomNomNami
-- Contract Demon 2.2.7 (Windows+Linux+MacOS build, maybe too) by NomNomNami
+## Tested Games
+| Game             | Version | Platforms             | Author        |
+| :--------------- | :-----: | :-------------------: | :-----------: |
+| Starry Flowers    | 1.7     | Windows, Linux, MacOS | NomNomNami    |
+| Contract Demon    | 2.2.7   | Windows, Linux, MacOS | NomNomNami    |
