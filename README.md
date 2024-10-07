@@ -13,12 +13,14 @@ If you are developer that want to mod som game or just want to add mod support f
 ## New Versions
 New version (v1.3) will be released: 10/15/24 (15 October 2024)
 v1.3 version small changelog (X - Done, W - Working, " " - Will be done):
-- Mod API Server (via socket)  [X]
-- Mod API Client (via socket)  [X]
-- Some Mod API functions       [X]
-- More logging                 [X]
-- Custom Ren'Py code load      [W]
-- Optimizations                [ ]
+|        Text INFO          | DONE |
+|-------------------------- | ---- |
+|Mod API Server (via socket)| [X]  |
+|Mod API Client (via socket)| [X]  |
+|Some Mod API functions     | [X]  |
+|More logging               | [X]  |
+|Custom Ren'Py code load    | [W]  |
+|Optimizations              | [ ]  |
 
 # Installation
 ## Python3 install
