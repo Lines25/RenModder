@@ -1,5 +1,5 @@
 # RenModder
-<div style="display: flex; align-items: center; text-align: left">
+<div style="display: flex; align-items: flex-start; text-align: left; margin-top: 0;">
   <div style="flex: 1;">
     <p><strong>RenModder</strong> is a tool for modding and patching Ren'Py games. Features include:</p>
     <ul>
