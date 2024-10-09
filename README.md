@@ -11,12 +11,9 @@
     <p>Current developers: <strong>Lines</strong></p>
   </div>
   <div>
-    <img src="https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True" alt="RenModder Logo" width="150">
+    <img src="https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True" alt="RenModder Logo" width="50">
   </div>
 </div>
-
-<span>https://google.com</span>
-
 
 ## 🎉 Features 🎉
 - **🔧 First universal mod loader for Ren'Py-based games based on Python and hooking**
