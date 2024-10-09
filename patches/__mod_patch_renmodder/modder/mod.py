@@ -1,3 +1,4 @@
+# We can just add "global mod_api" and use it as mod_api
 # import renpy.renmodder.mod_api
 
 
