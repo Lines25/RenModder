@@ -1,5 +1,6 @@
 # RenModder
 <div style="display: flex; align-items: flex-start; text-align: left; margin-top: 0;">
+  <img src="https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True" alt="RenModder Logo" width="150">
   <div style="flex: 1;">
     <p><strong>RenModder</strong> is a tool for modding and patching Ren'Py games. Features include:</p>
     <ul>
@@ -8,9 +9,6 @@
     </ul>
     <p>Whether you're a developer or a fan, RenModder makes modding simple! 🌈</p>
     <p>Current developers: <strong>Lines</strong></p>
-  </div>
-  <div align="right">
-    <img src="https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True" alt="RenModder Logo" width="150">
   </div>
 </div>
 
