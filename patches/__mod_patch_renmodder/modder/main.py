@@ -14,13 +14,14 @@ import renpy.game as game # type: ignore
 import pygame_sdl2 as pygame
 
 import renpy.renmodder.mod_api
+from threading import Timer
 
 # from renpy.ui import clear, menu # type: ignore
 
 last_clock = time.time()
 
 def main_log(text: str, write_to=sys.stdout):
-    print(f"[RENMODDER] RENMODDER MAIN: {text}", file=write_to)
+    print(f"[RENMODDER] MAIN: {text}", file=write_to)
 
 def run(restart):
     """
@@ -90,8 +91,6 @@ def run(restart):
     else:
         start_label = 'start'
 
-    game.context().goto_label(start_label)
-
     try:
         renpy.exports.log("--- " + time.ctime())
         renpy.exports.log("")
@@ -101,18 +100,22 @@ def run(restart):
     # Note if this is a restart.
     renpy.store._restart = restart
     # We run until we get an exception.
-    def tracer(frame, event, arg):
-        pass
-    sys.setprofile(tracer)
     renpy.display.interface.enter_context()
 
     log_clock("Running {}".format(start_label))
+    
+    game.script.load_script() # Load all new scripts
+    if game.script.has_label("RM_start"):
+        game.context().goto_label("RM_start")
+    else:
+        main_log(f" ===== FAILED TO USE RM_start. USING REN'PY ORIGINAL {start_label} ...")
+        game.context().goto_label(start_label)
 
     global mods
     for mod in renpy.store.mods:
         main_log(f"Main Ending: {mod.name}...")
         mod.main_end()
-
+        
     renpy.execution.run_context(True)
 
 
@@ -495,9 +498,9 @@ def main(mods):
 
         main_log(f"renpy.store._window: {renpy.store._window}")
 
-        main_log("Trying to load logo...")
-        global logo
-        logo = pygame.image.load(f"{os.getcwd()}/renpy/renmodder/logo.png")
+        # main_log("Trying to load logo...")
+        # global logo
+        # logo = pygame.image.load(f"{os.getcwd()}/renpy/renmodder/logo.png")
         # presplash_log("Starting logo display thread...")
         # Thread(target=hook_update, args=(window.update, logo, window), daemon=True).run()
 
@@ -553,10 +556,6 @@ def main(mods):
 
         for i in renpy.config.quit_callbacks:
             i()
-
-        for mod in mods:
-            main_log(f"Unloading: {mod.name} ...")
-            mod.unload()
 
         main_log("Quiting...")
         renpy.loader.auto_quit()

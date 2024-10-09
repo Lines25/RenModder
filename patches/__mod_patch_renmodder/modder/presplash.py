@@ -15,7 +15,7 @@ def find_file(base_name, root):
     return None
 
 def presplash_log(text: str, write_to=sys.stdout):
-    print(f"[RENMODDER] RENMODDER PRESPLASH: {text}", file=write_to)
+    print(f"[RENMODDER] PRESPLASH: {text}", file=write_to)
 
 
 

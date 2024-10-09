@@ -1,5 +1,5 @@
-from shutil import rmtree, copytree
-from os import listdir
+from shutil import rmtree, copytree, move
+from os import listdir, remove, walk, path
 from sys import argv
 
 PATCH_IDETEFICATOR = 0x8000 | 0xABC # DON'T CHANGE IT. IF YOU CHANGE THIS YOU CAN'T UNPATCH
@@ -83,9 +83,9 @@ MOD_PATCH_LOG_FILE = 'MOD_PATCH.log'
 def log(text: str, end: str = "\n", print_data: bool = True, print_log: bool = True):
     if print_data:
         if print_log:
-            print(f"[LOG] {text}", end=end)
+            print(f"[LOG] {text}", end=end, flush=True)
         else:
-            print(text, end=end)
+            print(text, end=end, flush=True)
     with open(MOD_PATCH_LOG_FILE, "a") as log_file:
         log_file.write(f"{text}{end}")
 
@@ -171,7 +171,7 @@ def patch_game(game_path: str) -> bool:
         # mkdir(renmodder)
         copytree("patches/__mod_patch_renmodder/modder/", renmodder)
 
-        print("OK")
+        log("OK", print_log=False)
     else:
         log("(*) Renmodder folder is founded. Skipping copying files...")
 
@@ -179,13 +179,48 @@ def patch_game(game_path: str) -> bool:
          len(listdir(game_path+"/renmodder_mods/")) < 1:
         log("(*) Installing DME mod...", end='')
 
-        with open(f"{game_path}/renmodder_mods/", "w") as mod:
+        with open(f"{game_path}/renmodder_mods/DME.py", "w") as mod:
             mod.write(DEV_TEST_MOD)
         
-        print("OK")
+        log("OK", print_log=False)
 
     else:
         log("(*) DME.py founded. Skipping...")
+
+    if "0RM_start.rpy" not in listdir(game_path+"/renpy/common/"):
+        log("(*) Installing custom RenModder start.rpy script...", end='')
+
+        with open("patches/__mod_patch_renmodder/modder/RM_start.rpy", "r") as start:
+            custom_start = start.read()
+
+        with open(f"{game_path}/renpy/common/0000A_RM_start.rpy", "w") as start:
+            start.write(custom_start)
+
+        log("OK", print_log=False)
+    else:
+        log("(*) 0RM_start.rpy founded. Skipping...")
+
+    if "00start.rpy" in listdir(game_path+"/renpy/common/"):
+        log("(*) Blocking 00start.rpy...", end='')
+
+        move(f"{game_path}/renpy/common/00start.rpy", f"{game_path}/renpy/common/00start.rpy.RM_BLOCKED")
+
+        log("OK", print_log=False)
+    else:
+        log("(*) 00start.rpy not found, maybe, alredy blocked. Skipping...")
+
+    log("(*) Clearing all .rpyc files, please wait...", end='')
+
+    for root, dirs, files in walk(game_path):
+        for file in files:
+            if file.endswith(".rpyc"):
+                file_path = path.join(root, file)
+                try:
+                    remove(file_path)
+                except OSError as e:
+                    log(f"Failed to delete file {file_path}: {e}")
+
+    log("OK", print_log=False)
 
     return True
 
@@ -237,9 +272,18 @@ def unpatch_game(game_path: str) -> bool:
     log("(*) Deleting renmodder folder...", end='')
     rmtree(renmodder, True)
     log("OK", print_log=False)
+    
+    # If you want, you can turn this on, but author is not recomend to do that:
 
-    log("(*) Deleting renmodder_mods folder...", end='')
-    rmtree(game_path+"/renmodder_mods/", True)
-    log("OK", print_log=False)
+    # log("(*) Deleting renmodder_mods folder...", end='')
+    # rmtree(game_path+"/renmodder_mods/", True)
+    # log("OK")
+
+    log("(*) Deleting 0RM_start.rpy...", end='')
+    try:
+        remove(game_path+"/renpy/common/0000A_RM_start.rpy")
+    except Exception:
+        pass
+    log("OK")    
 
     return True

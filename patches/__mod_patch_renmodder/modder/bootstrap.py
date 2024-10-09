@@ -3,16 +3,19 @@ import sys
 import renpy.renmodder.presplash # type: ignore
 import os
 import subprocess
-from .main import main
-from .mod import Mod
-from renpy.renmodder.config import MODS_PATH
 
-# import renpy.display
+from .main import main
+from threading import Thread
+from time import time, sleep
+
+from renpy.renmodder.mod import Mod
+from renpy.renmodder.config import MODS_PATH, BIND_TO, BIND_PORT
+from renpy.renmodder.mod_api_server import APIServer
 
 FSENENCODING = FSENCODING = sys.getfilesystemencoding() or "utf-8"
 
-def log(text: str):
-    print(f"[RENMODDER] RENMODDER BOOTSTRAP: {text}")
+def log(text: str, end: str = '\n'):
+    print(f"[RENMODDER] BOOTSTRAP: {text}", end=end)
 
 
 def get_alternate_base(basedir, always=False):
@@ -27,34 +30,7 @@ def get_alternate_base(basedir, always=False):
 
     # Determine the alternate base directory location.
 
-    if renpy.android:
-        altbase = os.path.join(os.environ["ANDROID_PRIVATE"], "base")
-
-    elif renpy.ios:
-        from pyobjus import autoclass # type: ignore
-        from pyobjus.objc_py_types import enum # type: ignore
-
-        NSSearchPathDirectory = enum("NSSearchPathDirectory", NSApplicationSupportDirectory=14)
-        NSSearchPathDomainMask = enum("NSSearchPathDomainMask", NSUserDomainMask=1)
-
-        NSFileManager = autoclass('NSFileManager')
-        manager = NSFileManager.defaultManager()
-        url = manager.URLsForDirectory_inDomains_(
-            NSSearchPathDirectory.NSApplicationSupportDirectory,
-            NSSearchPathDomainMask.NSUserDomainMask,
-            ).lastObject()
-
-        # url.path seems to change type based on iOS version, for some reason.
-        try:
-            altbase = url.path().UTF8String()
-        except Exception:
-            altbase = url.path.UTF8String()
-
-        if isinstance(altbase, bytes):
-            altbase = altbase.decode("utf-8")
-
-    else:
-        altbase = os.path.join(basedir, "base")
+    altbase = os.path.join(basedir, "base")
 
     if always:
         return altbase
@@ -92,39 +68,63 @@ def popen_del(self, *args, **kwargs):
 
     return
 
+def load_mod(file_content):
+    global mods
+    is_mod = False
+    class_name = None
+    for line in file_content.split("\n"):
+        if "(Mod)" in line and \
+            "#" not in line:
+            is_mod = True
+            class_name = line.replace("(Mod):", '').replace("class ", '') # class ThisIsMod(Mod): -> ThisIsMod
+            break
+
+    if is_mod:
+        log(f"Loading: {class_name}...")
+        if "#LOAD_WITH_GLOBALS" in file_content:
+            mod_namespace = globals()
+        else:
+            mod_namespace = {} # Like locals()
+        exec(file_content+f"\nmod = {class_name}()", globals(), mod_namespace)
+        mods.append(globals()['mod'])
+
 mods = []
 def run(renpy_base):
     global renpy
+    load_time = time()
     
     if renpy_base.endswith("/"):
         renpy_base = renpy_base[:-1] # Delete "/" at the end
 
-    print(renpy_base)
-    log("Loading mods...")
+    log(f"Renpy base: {renpy_base}")
+    log("Starting mod API server...")
+    global api_server
+
+    api_server = APIServer(BIND_TO, BIND_PORT)
+    api_server.start()
+    
+    log("Waiting for API server to start...")
+    while not api_server.loaded:
+        log("API Server is not loaded, waiting...")
+        sleep(0.5) # 0.5 - for server successfully load and mods don't raise "Broken pipe"
+    
+    log("Preparing loading mods...")
     mods_path = MODS_PATH.replace("~", renpy_base)
+    sys.path += renpy_base
 
     if not os.path.exists(mods_path):
         os.mkdir(mods_path)
 
+    log("Loading mods...")
+    load_threads = []
     for file in os.listdir(mods_path):
         if file.endswith(".py"):
             with open(os.path.join(mods_path, file), 'r') as module:
                 file_content = module.read()
 
-            is_mod = False
-            class_name = None
-            for line in file_content.split("\n"):
-                if "(Mod)" in line:
-                    is_mod = True
-                    class_name = line.replace("(Mod):", '').replace("class ", '') # class ThisIsMod(Mod): -> ThisIsMod
-                    break
-
-            if is_mod:
-                mod_namespace = {} # Like locals()
-                exec(file_content, globals(), mod_namespace)
-                exec(f"mod = {class_name}()", globals(), mod_namespace)
-                mods.append(mod_namespace['mod'])
-
+            th = Thread(target=load_mod, args=(file_content,))
+            load_threads.append(th)
+            th.start()
 
     for mod in mods:
         log(f"Bootstraping: {mod.name} ...")
@@ -265,13 +265,13 @@ You may be using a system install of python. Please run {0}.sh,
     log("Trying loader.init_importer from renpy...")
     renpy.loader.init_importer()
 
+    renpy.store._loaded_time = load_time
+
     log("Starting draw...")
 
     exit_status = None
     original_basedir = basedir
     original_sys_path = list(sys.path)
-
-    # Debug console, if needed to test smthing
 
     try:
         while exit_status is None:
@@ -302,6 +302,10 @@ You may be using a system install of python. Please run {0}.sh,
 
                 if not os.path.exists(renpy.config.logdir):
                     os.makedirs(renpy.config.logdir, 0o777)
+
+                log("Finishing mod loading...")
+                for th in load_threads:
+                    th.join()
 
                 for mod in mods:
                     log(f"End bootstraping: {mod.name} ...")
@@ -369,4 +373,7 @@ You may be using a system install of python. Please run {0}.sh,
         # __del__ method during shutdown.
         if not renpy.emscripten:
             subprocess.Popen.__del__ = popen_del # type: ignore
+    
+        log("Shutdowning: APIServer...")
+        api_server.shutdown()
 
