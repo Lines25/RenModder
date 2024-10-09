@@ -8,10 +8,9 @@
     </ul>
     <p>Whether you're a developer or a fan, RenModder makes modding simple! 🌈</p>
     <p>Current developers: <strong>Lines</strong></p>
-    <p>Current developers: <strong>Lines</strong></p>
   </div>
   <div>
-    <img src="https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True" alt="RenModder Logo" width="50">
+    <img src="https://github.com/Lines25/RenModder/blob/main/patches/__mod_patch_renmodder/modder/logo.png?raw=True" alt="RenModder Logo" width="150">
   </div>
 </div>
 
