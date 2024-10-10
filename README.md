@@ -15,8 +15,8 @@
 ## 🎉 Features 🎉
 - **🔧 First universal mod loader for Ren'Py-based games based on Python and hooking**
 - **🌟 Powerful and easy for developers to create mods**
-- **🚀 Super fast (~8.3 sec without and ~8.8 sec with RenModder v1.0 without mods)**
-- **📝 Adds more logging for better debugging**
+- **🚀 Super fast (~3.5 sec without vs ~3.3 sec with RenModder v1.3)**
+- **📝 Adds more logging for developers**
 - **👌 Easy to use and integrate**
 - **💻 Supports all PC OSes (Windows 7+, MacOS, Linux)**
 
