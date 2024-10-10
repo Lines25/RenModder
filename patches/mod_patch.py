@@ -286,4 +286,27 @@ def unpatch_game(game_path: str) -> bool:
         pass
     log("OK")    
 
+    if "00start.rpy" not in listdir(game_path+"/renpy/common/"):
+        log("(*) Unblocking 00start.rpy...", end='')
+
+        move(f"{game_path}/renpy/common/00start.rpy.RM_BLOCKED", f"{game_path}/renpy/common/00start.rpy")
+        
+        log("OK", print_log=False)
+    else:
+        log("(*) 00start.rpy found. Skipping...")
+
+    log("(*) Clearing all .rpyc files, please wait...", end='')
+
+    for root, dirs, files in walk(game_path):
+        for file in files:
+            if file.endswith(".rpyc"):
+                file_path = path.join(root, file)
+                try:
+                    remove(file_path)
+                except OSError as e:
+                    log(f"Failed to delete file {file_path}: {e}")
+
+    log("OK", print_log=False)
+    
+
     return True
