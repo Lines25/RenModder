@@ -37,6 +37,7 @@ init python:
     rpy_log("Loading mods and loaded_time...")
     mods = renpy.store.mods
     loaded_time = renpy.store._loaded_time
+    loaded_printed = False
 
 init -1600 python hide:
 
@@ -286,7 +287,7 @@ label _start:
 
     python:
         if not loaded_printed:
-            rpy_log(f"Loaded in: {time() - loaded_time}ms")
+            rpy_log(f"Loaded in: {time() - loaded_time:.3f}ms")
             loaded_printed = True
 
     # This has to be Python, to deal with a case where _restart may
