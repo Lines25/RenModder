@@ -19,7 +19,7 @@
 | More Mod API functions | NS |
 | Mod manager menu | C |
 | Run mods in sandbox | NS |
-| More control of game | NS |
+| More control of game | W |
 
 > **Tip: NS - Not Started. W - Working. C - Canceled**
 
