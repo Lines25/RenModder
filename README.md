@@ -12,6 +12,17 @@
   </div>
 </div>
 
+> ***RenModder v1.4 Jelly done percent: 15%***
+
+| Description | Status |
+| :-----------: | :------: |
+| More Mod API functions | NS |
+| Mod manager menu | C |
+| Run mods in sandbox | NS |
+| More control of game | NS |
+
+> **Tip: NS - Not Started. W - Working. C - Canceled**
+
 ## 🎉 Features 🎉
 - **🔧 First universal mod loader for Ren'Py-based games based on Python and hooking**
 - **🌟 Powerful and easy for developers to create mods**

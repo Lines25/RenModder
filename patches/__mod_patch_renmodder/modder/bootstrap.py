@@ -8,7 +8,7 @@ from .main import main
 from threading import Thread
 from time import time, sleep
 
-from renpy.renmodder.mod import Mod
+from renpy.renmodder.mod import Mod # Import Mod so mod classes can be child of this
 from renpy.renmodder.config import MODS_PATH, BIND_TO, BIND_PORT
 from renpy.renmodder.mod_api_server import APIServer
 
@@ -86,7 +86,7 @@ def load_mod(file_content):
         else:
             mod_namespace = {} # Like locals()
         exec(file_content+f"\nmod = {class_name}()", globals(), mod_namespace)
-        mods.append(globals()['mod'])
+        mods.append(mod_namespace['mod'])
 
 mods = []
 def run(renpy_base):
@@ -310,6 +310,8 @@ You may be using a system install of python. Please run {0}.sh,
                 for mod in mods:
                     log(f"End bootstraping: {mod.name} ...")
                     mod.bootstrap_end()
+                
+                log(f"Loaded mods ({len(mods)}): {mods}")
                 log("MAIN")
                 main(mods)
 

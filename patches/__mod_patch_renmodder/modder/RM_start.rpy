@@ -26,6 +26,7 @@
 init python:
     global mods
     global loaded_time
+    global loaded_printed
 
     import renpy.renmodder.config as rm_conf
     from time import time
@@ -78,7 +79,7 @@ init -1600 python hide:
     config.profile_reload = False
 
     # When should start_store happen?
-    config.early_start_store = True
+    config.early_start_store = False
 
     # A list of channes to stop playing when entering the main menu.
     config.main_menu_stop_channels = [ "sound", "voice", "movie" ]
@@ -201,9 +202,10 @@ label _splashscreen:
 # This is the true starting point of the program. Sssh... Don't
 # tell anyone.
 #
-# Okay ;)
+# Okay :3
 # - Lines
 label _start:
+    $ global loaded_printed
 
     if config.early_start_store:
         call _start_store
@@ -265,6 +267,7 @@ label _start:
 
     $ renpy.block_rollback()
 
+    $ rpy_log("Starting main menu music...")
     if config.main_menu_music:
         $ renpy.music.play(config.main_menu_music, if_changed=True, fadein=config.main_menu_music_fadein)
     else:
@@ -277,8 +280,14 @@ label _start:
         if renpy.has_screen("main_menu"):
             renpy.stop_predict_screen("main_menu")
 
+        rpy_log("(Re)initializing window...")
         # Implement config.window
         _init_window()
+
+    python:
+        if not loaded_printed:
+            rpy_log(f"Loaded in: {time() - loaded_time}ms")
+            loaded_printed = True
 
     # This has to be Python, to deal with a case where _restart may
     # change across a shift-reload.
@@ -297,7 +306,7 @@ label _invoke_main_menu:
     python:
         if _restart:
             renpy.call_in_new_context(_restart[2])
-        elif not renpy.os.environ.get("RENPY_SKIP_MAIN_MENU", False):
+        elif not renpy.os.environ.get("RENPY_SKIP_MAIN_MENU", not rm_conf.ENABLE_MAIN_MENU):
             renpy.call_in_new_context("_main_menu")
 
 
@@ -325,7 +334,6 @@ label _main_menu(_main_menu_screen="_main_menu_screen"):
 
 # This is called to show the main menu to the user.
 label _main_menu_screen:
-    $ rpy_log(f"Loaded in {time()-loaded_time}ms")
     if not rm_conf.ENABLE_MAIN_MENU:
         return
 
@@ -349,4 +357,97 @@ label _main_menu_screen:
 
     return
 
+
+### RenModder label
+label RM_start:
+    $ rpy_log("Started RM_start label. Loading _start...")
+    call _start
+
+
+##### CANCELED
+# Maybe.. Someday.. I will continue creating this:
+
+# ### RenModder tool manager
+# screen _rm_tool_manager:
+
+#     zorder 1051
+#     modal True
+
+#     frame:
+#         style_prefix ""
+
+#         has side "t c b":
+#             spacing gui._scale(10)
+
+#         label _("RenModder Tools")
+
+#         fixed:
+#             vbox:
+
+#                 textbutton _("Mod Manager (Working on..)"):
+#                     action [Hide("_rm_tool_manager"), Show("_rm_mod_manager")]
+
+
+#                 textbutton _("Reload Game (Shift+R)"):
+#                     action renpy.reload_script
+
+#                 textbutton _("Console (Shift+O)"):
+#                     action [ Hide("_rm_tool_manager"), _console.enter ]
+
+
+#         hbox:
+#             spacing gui._scale(35)
+
+#             textbutton _(u"Return"):
+#                 action Hide("_rm_tool_manager")
+#                 size_group "_rm_tool_manager"
+
+#     key "K_F7" action Hide("_rm_tool_manager")
+
+
+# ### RenModder Mod Manager
+# screen _rm_mod_manager:
+
+#     zorder 1052
+#     modal True
+
+#     frame:
+#         style_prefix ""
+
+#         has side "t c b":
+#             spacing gui._scale(10)
+
+#         label _("RenModder Mods")
+
+#         fixed:
+#             vbox:
+
+#                 textbutton _("Mod Manager (Working on..)"):
+#                     action [ print("NO") ]
+
+
+#                 textbutton _("Reload Game (Shift+R)"):
+#                     action renpy.reload_script
+
+#                 textbutton _("Console (Shift+O)"):
+#                     action [ Hide("_rm_tool_manager"), _console.enter ]
+
+
+#         hbox: # ERROR -----------------------
+#             spacing gui._scale(35)
+
+#             textbutton _(u"Return"):
+#                 action Hide("_rm_mod_manager")
+#                 # action Show("_rm_tool_manager")
+#                 size_group "_rm_mod_manager"
+#         # ERROR --------------------------------
+
+# ### F7 Key listener to open _renmodder_rm_tool_manager() screen menu
+# screen _key_listener:
+#     key 'K_F7' action Show("_renmodder_rm_tool_manager")
+
+#     frame:
+#         pos (500,500)
+#         xysize (config.screen_width, config.screen_height)
+#         background "#0000"
 

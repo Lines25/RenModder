@@ -1,5 +1,7 @@
 ##### RENMODDER CONFIG #####
+# NOTE: True - Yes, False - No, "text"/'text', 1234 - numbers
 # NOTE: ~ == the root dir of game
+
 ### ALL
 CACHE_FOLDER = "~" # Not used for this time
 VERBOSE_LOG = True

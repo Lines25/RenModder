@@ -1,6 +1,7 @@
 from shutil import rmtree, copytree, move
-from os import listdir, remove, walk, path
+from os import listdir, remove, walk, makedirs, path
 from sys import argv
+from threading import Thread
 
 PATCH_IDETEFICATOR = 0x8000 | 0xABC # DON'T CHANGE IT. IF YOU CHANGE THIS YOU CAN'T UNPATCH
 PATCH_VERSION = 0.1
@@ -48,7 +49,7 @@ DEV_TEST_MOD = """
 
 class TestMod(Mod):
     def __mod_log(self, text: str):
-        print(f"[RENMODDER] [{self.name}] ={self.id}= {text}")
+        print(f"[RENMODDER] [{self.name}] {text}")
 
     def __init__(self) -> None:
         self.id = id(self)
@@ -129,6 +130,7 @@ def patch_game(game_path: str) -> bool:
     renmodder = game_path + renmodder
     init = game_path + init
 
+    ### Add prefix in window name
     if "--disable-lib" not in argv and "-dl" not in argv:
         if check_patched(lib):
             log("(F) 00library.rpy: ALREDY PATCHED")
@@ -145,6 +147,7 @@ def patch_game(game_path: str) -> bool:
     else:
         log("($) 00library.rpy disabled by user (--disable-lib)")
     
+    ### Patch bootstrap.py that it will be run renpy.renmodder.bootstrap.run()
     if check_patched(bootstrap):
         log("(F) bootstrap.py: ALREDY PATCHED")
     else:
@@ -155,6 +158,7 @@ def patch_game(game_path: str) -> bool:
         else:
             log("OK", print_log=False)
 
+    ### Patch __init__.py that it don't pickle() renmodder components
     if check_patched(init):
         log("(F) __init__.py: ALREDY PATCHED")
     else:
@@ -165,6 +169,7 @@ def patch_game(game_path: str) -> bool:
         else:
             log("OK", print_log=False)
 
+    ### Copy modder
     if "renmodder" not in listdir(game_path+"/renpy/"):
         log("(*) Renmodder folder not found. Creating it and copying files...", end='')
 
@@ -175,6 +180,7 @@ def patch_game(game_path: str) -> bool:
     else:
         log("(*) Renmodder folder is founded. Skipping copying files...")
 
+    ### Create test DME mod
     if "renmodder_mods" in listdir(game_path) and \
          len(listdir(game_path+"/renmodder_mods/")) < 1:
         log("(*) Installing DME mod...", end='')
@@ -187,6 +193,7 @@ def patch_game(game_path: str) -> bool:
     else:
         log("(*) DME.py founded. Skipping...")
 
+    ### Install RenModder 00start.rpy
     if "0RM_start.rpy" not in listdir(game_path+"/renpy/common/"):
         log("(*) Installing custom RenModder start.rpy script...", end='')
 
@@ -200,6 +207,7 @@ def patch_game(game_path: str) -> bool:
     else:
         log("(*) 0RM_start.rpy founded. Skipping...")
 
+    ### Block original 00start.rpy. If don't do this, it will conflict with RenModder one
     if "00start.rpy" in listdir(game_path+"/renpy/common/"):
         log("(*) Blocking 00start.rpy...", end='')
 
@@ -210,15 +218,36 @@ def patch_game(game_path: str) -> bool:
         log("(*) 00start.rpy not found, maybe, alredy blocked. Skipping...")
 
     log("(*) Clearing all .rpyc files, please wait...", end='')
+    
+    ### Install RenModder libs
+    if len(listdir("patches/__mod_patch_renmodder/libs/")) != 0:
+        game_libs = ''
+        for file in listdir(game_path+"/lib/"):
+            if file.startswith("python"):
+                game_libs = f"{game_path}/lib/{file}/renmodder_libs/"
+                
+                break
+
+        log("(*) Injecting libraries:")
+        
+        for file in listdir('patches/__mod_patch_renmodder/libs/'):
+            log(f"- {file} ...", end='')
+            move(file, game_libs)
+            log("OK", print_log=False)
+
+    ### Clear all compiled .rpy files
+    def del_file(file_path: str):
+        try:
+            remove(file_path)
+        except OSError as e:
+            log(f"Failed to delete file {file_path}: {e}")
 
     for root, dirs, files in walk(game_path):
         for file in files:
             if file.endswith(".rpyc"):
                 file_path = path.join(root, file)
-                try:
-                    remove(file_path)
-                except OSError as e:
-                    log(f"Failed to delete file {file_path}: {e}")
+                Thread(target=del_file, args=(file_path,)).run()
+                
 
     log("OK", print_log=False)
 
@@ -236,6 +265,7 @@ def unpatch_game(game_path: str) -> bool:
     renmodder = game_path + renmodder
     init = game_path + init
 
+    ### Unpatch title of window, if patched
     if check_patched(lib):
         log("(*) Unpatching: Title...", end='')
         ret = patch(TITLE_PATCHED, TITLE_ORIGINAL, lib)
@@ -247,6 +277,7 @@ def unpatch_game(game_path: str) -> bool:
     else:
         log("(F) 00library.rpy: NOT PATCHED")
 
+    ### Unpatch bootstrap, if patched
     if check_patched(bootstrap):
         log("(*) Unpatching: Bootstrap...", end='')
         ret = patch(BOOTSTRAP_PATCHED, BOOTSTRAP_ORIGINAL, bootstrap)
@@ -257,6 +288,7 @@ def unpatch_game(game_path: str) -> bool:
     else:
         log("(F) bootstrap.py: NOT PATCHED")
 
+    ### Unpatch __init__.py, if patched
     if check_patched(init):
         log("(*) Unpatching: __init__.py...", end='')
         ret = patch(INIT_PATCHED, INIT_ORIGINAL, init)
@@ -269,6 +301,7 @@ def unpatch_game(game_path: str) -> bool:
         log("(F) __init__.py: NOT PATCHED")
 
 
+    ### Delete RenModder files
     log("(*) Deleting renmodder folder...", end='')
     rmtree(renmodder, True)
     log("OK", print_log=False)
@@ -279,6 +312,7 @@ def unpatch_game(game_path: str) -> bool:
     # rmtree(game_path+"/renmodder_mods/", True)
     # log("OK")
 
+    ### Delete RenModder custom 00start.rpy
     log("(*) Deleting 0RM_start.rpy...", end='')
     try:
         remove(game_path+"/renpy/common/0000A_RM_start.rpy")
@@ -286,6 +320,7 @@ def unpatch_game(game_path: str) -> bool:
         pass
     log("OK")    
 
+    ### Unblock original 00start.rpy
     if "00start.rpy" not in listdir(game_path+"/renpy/common/"):
         log("(*) Unblocking 00start.rpy...", end='')
 
@@ -295,6 +330,10 @@ def unpatch_game(game_path: str) -> bool:
     else:
         log("(*) 00start.rpy found. Skipping...")
 
+
+
+    ### Clear all compiled .rpy files. If don't do this, it will cause conflicts
+    # (Ren'Py will load .rpyc files instead of .rpy one)
     log("(*) Clearing all .rpyc files, please wait...", end='')
 
     for root, dirs, files in walk(game_path):
