@@ -12,6 +12,17 @@ from renpy.renmodder.mod import Mod # Import Mod so mod classes can be child of 
 from renpy.renmodder.config import MODS_PATH, BIND_TO, BIND_PORT
 from renpy.renmodder.mod_api_server import APIServer
 
+# try:
+    # from tkinter.messagebox import askquestion as aq
+# except Exception:
+#     def aq(*args, **kwargs):
+#         log("FAILED TO LOAD TKINTER.MESSAGEBOX !!")
+#         log("USING DEFAULT: 'yes'")
+#         log("IF YOU ARE USING LINUX, TRY TO INSTALL 'TK' MODULE (On arch (extra): pacman -S tk)")
+#         return 'yes'
+
+from tkinter.messagebox import askquestion as aq
+
 FSENENCODING = FSENCODING = sys.getfilesystemencoding() or "utf-8"
 
 def log(text: str, end: str = '\n'):
@@ -90,7 +101,14 @@ def load_mod(file_content):
 
 mods = []
 def run(renpy_base):
+    with_renmodder = aq("Enable RenModder ?",
+        "Do you want to load game with RenModder ? \
+            (If not, it disables all mods for this run)")
+
     global renpy
+    if not with_renmodder == 'yes':
+        renpy.bootstrap.bootstrap(real_one=True)
+
     load_time = time()
     
     if renpy_base.endswith("/"):

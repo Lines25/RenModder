@@ -41,7 +41,9 @@ First, download Python (3.7+) from the [official website](https://python.org) or
 - **MacOS:** Install [HomeBrew](https://brew.sh/), then run: `brew install python3` 🍏
 
 ## Patching Games
-Download this repository or run `git clone https://github.com/Lines115/RenModder.git` in your terminal. 📦
+Download this repository or run `git clone https://github.com/Lines25/RenModder.git` in your terminal. 📦
+
+> **TIP: You can launch file main_gui.py to use GUI version of app**
 
 Open a terminal in the unzipped folder, and you're ready to patch or unpatch with the following commands:
 

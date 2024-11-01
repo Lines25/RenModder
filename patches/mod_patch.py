@@ -217,8 +217,7 @@ def patch_game(game_path: str) -> bool:
     else:
         log("(*) 00start.rpy not found, maybe, alredy blocked. Skipping...")
 
-    log("(*) Clearing all .rpyc files, please wait...", end='')
-    
+
     ### Install RenModder libs
     if len(listdir("patches/__mod_patch_renmodder/libs/")) != 0:
         game_libs = ''
@@ -232,7 +231,7 @@ def patch_game(game_path: str) -> bool:
         
         for file in listdir('patches/__mod_patch_renmodder/libs/'):
             log(f"- {file} ...", end='')
-            move(file, game_libs)
+            move("patches/__mod_patch_renmodder/libs/"+file, game_libs)
             log("OK", print_log=False)
 
     ### Clear all compiled .rpy files
@@ -241,6 +240,8 @@ def patch_game(game_path: str) -> bool:
             remove(file_path)
         except OSError as e:
             log(f"Failed to delete file {file_path}: {e}")
+
+    log("(*) Clearing all .rpyc files, please wait...", end='')
 
     for root, dirs, files in walk(game_path):
         for file in files:
