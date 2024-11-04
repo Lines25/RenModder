@@ -118,3 +118,13 @@ Thanks to my lazy self for starting this project and special thanks to **Tom Rot
 | :--------------- | :-----: | :-------------------: | :-----------: |
 | Starry Flowers   | 1.7     | Windows, Linux, MacOS | NomNomNami    |
 | Contract Demon   | 2.2.7   | Windows, Linux, MacOS | NomNomNami    |
+
+## Star History
+
+<a href="https://star-history.com/#Lines25/RenModder&renpy/renpy&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Lines25/RenModder,renpy/renpy&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Lines25/RenModder,renpy/renpy&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Lines25/RenModder,renpy/renpy&type=Date" />
+ </picture>
+</a>
