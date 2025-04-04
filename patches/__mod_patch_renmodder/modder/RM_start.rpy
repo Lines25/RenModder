@@ -30,14 +30,51 @@ init python:
 
     import renpy.renmodder.config as rm_conf
     from time import time
+    from threading import Thread, Lock
 
     def rpy_log(text: str, end: str = '\n'):
         print(f"[RENMODDER] RPY Start: {text}", end=end)
 
+    renpy.renmodder_disabled = renpy.renmodder_disabled or True
+
+    print()
     rpy_log("Loading mods and loaded_time...")
-    mods = renpy.store.mods
-    loaded_time = renpy.store._loaded_time
-    loaded_printed = False
+    try:
+        mods = renpy.store.mods
+        loaded_time = renpy.store._loaded_time or time()
+        loaded_printed = False
+
+        rpy_log("Starting notify thread...")
+        global NOTIFY_LOCK, LOAD_TIME
+        NOTIFY_LOCK = Lock()
+        LOAD_TIME = None
+        def __notify_loaded():
+            import time
+            NOTIFY_LOCK.acquire()
+            
+            time.sleep(1)
+            renpy.display_notify(f"RenModder loaded in: {LOAD_TIME}ms")
+            time.sleep(2)
+            renpy.display_notify("Press F7 to open RenModder")
+            exit(0)
+
+        NOTIFY_LOCK.acquire()
+        Thread(target=__notify_loaded).start()
+    except Exception as e:
+        if renpy.renmodder_disabled:
+            rpy_log("RenModder disabled")
+        else:
+            rpy_log(f"Failed to load mods and loaded_time: {e}")
+
+    def _init_language():
+        """
+        Changes the default language. This is called automatically by
+        Ren'Py as it starts up.
+        """
+        import os
+        language = os.environ.get("RENPY_LANGUAGE") or config.language or _preferences.language
+        renpy.change_language(language)
+
 
 init -1600 python hide:
 
@@ -99,29 +136,23 @@ init -1600 python:
 
         renpy.change_language(language)
 
-# This fixes up the context, if necessary, then calls the real
-# after_load.
+# Labels from the original file
 label _after_load:
-
     python:
         renpy.context()._menu = False
         renpy.context()._main_menu = False
         main_menu = False
         _in_replay = None
-
         _init_language()
-
-        # Older save games could have this set to non-None, so reset it.
         _side_image_attributes = None
 
-
     python hide:
-
         for i in config.after_load_callbacks:
             i()
 
         if config.after_load_transition:
             renpy.transition(config.after_load_transition, force=True)
+
 
         if "_reload_time" in renpy.session:
             start = renpy.session.pop("_reload_time")
@@ -286,9 +317,14 @@ label _start:
         _init_window()
 
     python:
-        if not loaded_printed:
-            rpy_log(f"Loaded in: {time() - loaded_time:.3f}ms")
-            loaded_printed = True
+        try:
+            load_time = int((time() - loaded_time)*1000)
+            if not loaded_printed:
+                rpy_log(f"Loaded in: {load_time}ms")
+                loaded_printed = True
+                LOAD_TIME = load_time
+                NOTIFY_LOCK.release()
+        except: pass
 
     # This has to be Python, to deal with a case where _restart may
     # change across a shift-reload.
@@ -364,91 +400,89 @@ label RM_start:
     $ rpy_log("Started RM_start label. Loading _start...")
     call _start
 
+screen _rm_mod_menu():
+    modal True
+    zorder 999
 
-##### CANCELED
-# Maybe.. Someday.. I will continue creating this:
+    frame:
+        xalign 0.5
+        yalign 0.5
+        xsize 400
+        ysize 300
+        background "#222222"
 
-# ### RenModder tool manager
-# screen _rm_tool_manager:
+        vbox:
+            xalign 0.5
+            yalign 0.5
+            spacing 20
 
-#     zorder 1051
-#     modal True
+            text "RenModder Menu" size 24 xalign 0.5
 
-#     frame:
-#         style_prefix ""
+            textbutton "Mod Manager" action [Hide("_rm_mod_menu"), Show("_rm_mod_manager")] xalign 0.5
+            textbutton "Reload Game" action Function(renpy.reload_script) xalign 0.5
+            textbutton "Console" action _console.enter xalign 0.5
+            textbutton "Close" action Hide("_rm_mod_menu") xalign 0.5
 
-#         has side "t c b":
-#             spacing gui._scale(10)
+screen _rm_mod_manager():
+    modal True
+    zorder 999
+    style_prefix "rm_mod_manager"
 
-#         label _("RenModder Tools")
+    frame:
+        xfill True
+        yfill True
+        background "#636161"
 
-#         fixed:
-#             vbox:
+        vbox:
+            spacing 20
+            xalign 0.5
+            yalign 0.5
+            xsize 800
+            ysize 600
 
-#                 textbutton _("Mod Manager (Working on..)"):
-#                     action [Hide("_rm_tool_manager"), Show("_rm_mod_manager")]
+            text "Mod Manager" size 24 xalign 0.5
 
+            viewport:
+                id "mod_list"
+                scrollbars "vertical"
+                mousewheel True
+                ysize 500
+                xfill True
 
-#                 textbutton _("Reload Game (Shift+R)"):
-#                     action renpy.reload_script
+                has vbox
+                spacing 15
 
-#                 textbutton _("Console (Shift+O)"):
-#                     action [ Hide("_rm_tool_manager"), _console.enter ]
+                for mod in renpy.store.mods:
+                    
+                    frame:
+                        xfill True
+                        background "#333333"
 
+                        vbox:
+                            spacing 5
+                            xfill True
 
-#         hbox:
-#             spacing gui._scale(35)
+                            text "[mod.name!q]" size 18
+                            text "Version: [mod.version]" size 14
+                            text "ID: [mod.id]" size 14
 
-#             textbutton _(u"Return"):
-#                 action Hide("_rm_tool_manager")
-#                 size_group "_rm_tool_manager"
+            textbutton "Close" action Hide("_rm_mod_manager") xalign 0.5
 
-#     key "K_F7" action Hide("_rm_tool_manager")
+style rm_mod_manager_frame:
+    background None
 
+style rm_mod_manager_vbox:
+    xalign 0.5
+    yalign 0.5
 
-# ### RenModder Mod Manager
-# screen _rm_mod_manager:
+style rm_mod_manager_button:
+    size_group "mod_manager"
 
-#     zorder 1052
-#     modal True
+screen _rm_mod_menu_overlay():
+    key "K_F7" action Show("_rm_mod_menu")
 
-#     frame:
-#         style_prefix ""
-
-#         has side "t c b":
-#             spacing gui._scale(10)
-
-#         label _("RenModder Mods")
-
-#         fixed:
-#             vbox:
-
-#                 textbutton _("Mod Manager (Working on..)"):
-#                     action [ print("NO") ]
-
-
-#                 textbutton _("Reload Game (Shift+R)"):
-#                     action renpy.reload_script
-
-#                 textbutton _("Console (Shift+O)"):
-#                     action [ Hide("_rm_tool_manager"), _console.enter ]
-
-
-#         hbox: # ERROR -----------------------
-#             spacing gui._scale(35)
-
-#             textbutton _(u"Return"):
-#                 action Hide("_rm_mod_manager")
-#                 # action Show("_rm_tool_manager")
-#                 size_group "_rm_mod_manager"
-#         # ERROR --------------------------------
-
-# ### F7 Key listener to open _renmodder_rm_tool_manager() screen menu
-# screen _key_listener:
-#     key 'K_F7' action Show("_renmodder_rm_tool_manager")
-
-#     frame:
-#         pos (500,500)
-#         xysize (config.screen_width, config.screen_height)
-#         background "#0000"
-
+init python:
+    from renpy.renmodder.mod import Mod
+    # config.overlay_screens.append("_rm_mod_menu_overlay")
+    if not renpy.renmodder_disabled:
+        config.always_shown_screens.append("_rm_mod_menu_overlay")

@@ -1,4 +1,3 @@
-
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
 
 import os
@@ -14,14 +13,25 @@ import renpy.game as game # type: ignore
 import pygame_sdl2 as pygame
 
 import renpy.renmodder.mod_api
-from threading import Timer
-
-# from renpy.ui import clear, menu # type: ignore
+import renpy.renmodder.events
+from renpy.renmodder.bootstrap import _dir
 
 last_clock = time.time()
 
 def main_log(text: str, write_to=sys.stdout):
     print(f"[RENMODDER] MAIN: {text}", file=write_to)
+
+def event_wrapper(func, event_type):
+    renpy.renmodder.events.trigger_event(event_type)
+    func()
+
+class InputEventHandler(object):
+    def __init__(self):
+        self.event_func = lambda ev: renpy.renmodder.events.trigger_event("input", ev)
+    
+    def __call__(self, ev, x=0, y=0, st=0):
+        self.event_func(ev)
+        return None
 
 def run(restart):
     """
@@ -70,7 +80,7 @@ def run(restart):
     # Handle arguments and commands.
     if not renpy.arguments.post_init():
         # We use 'exception' instead of exports.quit
-        # to not call quit label since it's not nessesary.
+        # to not call quit label since it's not necessary.
         raise renpy.game.QuitException()
 
     if renpy.config.clear_lines:
@@ -116,7 +126,24 @@ def run(restart):
         main_log(f"Main Ending: {mod.name}...")
         mod.main_end()
         
+
+    
+    # Initialize display and run the context
+    main_log("Initializing display...")
+    # renpy.display.core.cpu_idle.init() # Not supported by Ren'Py 8.2+
+    renpy.display.interface.post_init()
+    
+    # Run the main game context
+    main_log("Running main context...")
     renpy.execution.run_context(True)
+    
+    # Clean up after run
+    main_log("Cleaning up...")
+    # renpy.display.core.cpu_idle.end() # Not supported by Ren'Py 8.2+
+    
+    # Final event trigger before exit
+    renpy.renmodder.events.trigger_event("end")
+    main_log("Run complete.")
 
 
 def load_rpe(fn):
@@ -178,6 +205,8 @@ def choose_variants():
 
 
 def main(mods):
+    if "_loaded_time" not in _dir(renpy.store):
+        renpy.store._loaded_time = time.time()
     renpy.store.mods = mods
 
     renpy.renmodder.mod_api.load_mod_api()
@@ -192,21 +221,27 @@ def main(mods):
     renpy.game.exception_info = 'Before loading the script.'
 
     # Clear the line cache, since the script may have changed.
+    main_log("Clearing line cache...")
     linecache.clearcache()
 
     # Get ready to accept new arguments.
+    main_log("Preiniting arguments...")
     renpy.arguments.pre_init()
 
-    # Init the screen language parser.
+    # Init the screen language parser
+    main_log("Initializing sl2 parser")
     renpy.sl2.slparser.init()
 
     # Init the config after load.
+    main_log("Initializing config...")
     renpy.config.init()
 
     # Reset live2d if it exists.
     try:
+        main_log("Trying to reset live2d")
         renpy.gl2.live2d.reset()
     except Exception:
+        main_log("Live2d not found, 'kay")
         pass
 
     # Set up variants.
@@ -219,9 +254,15 @@ def main(mods):
     # Note the game directory.
     game.basepath = renpy.config.gamedir
     renpy.config.commondir = renpy.__main__.path_to_common(renpy.config.renpy_base) # E1101 @UndefinedVariable
-    renpy.config.searchpath = renpy.__main__.predefined_searchpath(renpy.config.commondir) # E1101 @UndefinedVariable
+    try:
+        renpy.config.searchpath = renpy.__main__.predefined_searchpath(renpy.config.commondir) # E1101 @UndefinedVariable
+    except AttributeError:
+            renpy.config.searchpath = [renpy.config.gamedir]
+
+
 
     # Load Ren'Py extensions.
+    main_log("Loading Ren'Py extensions:")
     for dir in renpy.config.searchpath: # @ReservedAssignment
 
         if not os.path.isdir(dir):
@@ -229,15 +270,19 @@ def main(mods):
 
         for fn in sorted(os.listdir(dir)):
             if fn.lower().endswith(".rpe"):
-                load_rpe(dir + "/" + fn)
+                rpe_file = f"{dir}/{fn}"
+                main_log(f" - {rpe_file}")
+                load_rpe(rpe_file)
 
     # Generate a list of extensions for each archive handler.
+    main_log("Generating a list of extensions...")
     archive_extensions = [ ]
     for handler in renpy.loader.archive_handlers:
         for ext in handler.get_supported_extensions():
             if not (ext in archive_extensions):  # noqa: E713
                 archive_extensions.append(ext)
 
+    main_log("Searching for archives")
     # Find archives.
     for dn in renpy.config.searchpath:
 
@@ -256,32 +301,38 @@ def main(mods):
     renpy.config.archives.reverse()
 
     # Initialize archives.
+    main_log("Initializing archives...")
     renpy.loader.index_archives()
 
     # Start auto-loading.
+    main_log("Starting auto-loading...")
     renpy.loader.auto_init()
 
+    main_log("Loading build info...")
     load_build_info()
 
     log_clock("Early init")
 
     # Initialize the log.
+    main_log("Initializing original Ren'Py log...")
     game.log = renpy.python.RollbackLog()
 
     # Initialize the store.
     renpy.store.store = sys.modules['store'] # type: ignore
 
     # Set up styles.
+    main_log("Setting up styles...")
     game.style = renpy.style.StyleManager() # @UndefinedVariable
     renpy.store.style = game.style
 
-    # Run init code in its own context. (Don't log.)
+    # Run init code in its own context. (Don't log. Ok)
     game.contexts = [ renpy.execution.Context(False) ]
     game.contexts[0].init_phase = True
 
     renpy.execution.not_infinite_loop(60)
 
     # Load the script.
+    main_log("Loading script...")
     renpy.game.exception_info = 'While loading the script.'
     renpy.game.script = renpy.script.Script()
 
@@ -289,15 +340,25 @@ def main(mods):
         renpy.game.args.compile = True # type: ignore
 
     # Set up error handling.
-    renpy.exports.load_module("_errorhandling")
+    main_log("Loading error handler...")
+    try:
+        renpy.exports.load_module("_errorhandling")
+    except Exception:
+        renpy.exports.load_module("_errorhandling")
 
     if renpy.exports.loadable("tl/None/common.rpym") or renpy.exports.loadable("tl/None/common.rpymc"):
         renpy.exports.load_module("tl/None/common")
 
-    renpy.config.init_system_styles()
-    renpy.style.build_styles() # @UndefinedVariable
+    main_log("Initializing system styles and building styles...")
+    try:
+        renpy.config.init_system_styles()
+        renpy.style.build_styles() # @UndefinedVariable
+    except TypeError:
+        game.style = renpy.style.StyleManager() # @UndefinedVariable
+        renpy.store.style = game.style
 
     log_clock("Loading error handling")
+    main_log("Loading error handling...")
 
     # If recompiling everything, remove orphan .rpyc files.
     # Otherwise, will fail in case orphan .rpyc have same
@@ -323,9 +384,11 @@ def main(mods):
         renpy.game.script.scan_script_files()
 
     # Load all .rpy files.
+    main_log("Loading all .rpy files...")
     renpy.game.script.load_script() # sets renpy.game.script.
     log_clock("Loading script")
 
+    main_log("Loading script...")
     if renpy.game.args.command == 'load-test': # type: ignore
         start = time.time()
 
@@ -346,8 +409,13 @@ def main(mods):
     if renpy.game.args.savedir: # type: ignore
         renpy.config.savedir = renpy.game.args.savedir # type: ignore
 
-    # Init the save token system.
-    renpy.savetoken.init()
+    main_log(f"Found Ren'Py savedir at: {renpy.config.savedir}")
+
+    # Init the save token system, if we can.
+    try:
+        main_log("Initializing savetoken system...")
+        renpy.savetoken.init()
+    except Exception: pass
 
     # Init preferences.
     game.persistent = renpy.persistent.init()
@@ -361,12 +429,23 @@ def main(mods):
         renpy.config.screen_width, renpy.config.screen_height = game.persistent._virtual_size
 
     # Init save locations and loadsave.
+    main_log("Initializing saves...")
     renpy.savelocation.init()
+
+    
+    main_log("Trying to load event hooks...")
+    try:
+        renpy.renmodder.events.setup_event_hooks()
+    except Exception as e:
+        main_log(f"FAILED TO LOAD EVENT HOOKS, ERROR: {e}")
 
     try:
         # Init save slots and save tokens.
         renpy.loadsave.init()
-        renpy.savetoken.upgrade_all_savefiles()
+        try:
+            renpy.savetoken.upgrade_all_savefiles()
+        except Exception: pass
+
         log_clock("Loading save slot metadata")
 
         # Load persistent data from all save locations.
