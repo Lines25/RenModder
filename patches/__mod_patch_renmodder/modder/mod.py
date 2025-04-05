@@ -4,11 +4,12 @@
 
 class Mod:
     def __mod_log(self, text: str):
-        print(f"[RENMODDER] [{self.name}] ={self.id}= {text}")
+        print(f"[{self.name}] {text}")
 
     def __init__(self) -> None:
         self.id = id(self)
-        self.name = "Test mod"
+        self.name = "NO NAME"
+        self.sys_name = f"no.name.{self.id}"
         self.version = 1.0
 
     def event(self, event_type: str, event_args: set or None):

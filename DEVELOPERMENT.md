@@ -16,7 +16,12 @@ class TestMod(Mod):
     def __init__(self) -> None:
         self.id = id(self)
         self.name = "Test mod"
-        self.sys_name = "lines.test.mod" # author.mod.name.but.spaces.are.dots
+        
+        # If you're creating mod and wanna update it... DO NOT CHANGE THIS.
+        # If you change this - other mods will not see this mod, RenModder
+        # will think that this mod is new, even if it not really new and 
+        # other bad things will happen. (sys_name)
+        self.sys_name = "lines.test.mod" # author and mod name separted by dots. 
         self.version = 1.0
 
     def bootstrap(self):
@@ -43,25 +48,26 @@ class TestMod(Mod):
 
 ## ⚙️ How Does RenModder Work?
 
-It modifies renpy/bootstrap.py to globally load and execute renpy/renmodder/bootstrap.py, running its run() function.
+It modifies `renpy/bootstrap.py` to globally load and execute `renpy/renmodder/bootstrap.py`, running its run() function.
 ```python
 def bootstrap(renpy_base, real_one=False): # Added custom parameter real_one that's bool
 
     #35516 RENMODDER MOD PATCH # Marks for patcher to find if this file is patched
     # global renpy
     if not real_one:
-        global l
-        for l in sys.modules.keys():
-            print(f"[RENMODDER] RENMODDER BOOTSTRAPING: GLOBALING {l}")
-            if not '.' in l:
-                exec(f'global {l}')
+	    global l
+	    print("[RENMODDER] RENMODDER BOOTSTRAPING: GLOBALING", end=' ')
+	    for l in sys.modules.keys():
+	        if not '.' in l:
+	            print(f"{l},", end=' ')
+	            exec(f'global {l}')
 
-        print('[RENMODDER] RENMODDER BOOTSTRAPING: LOADING RENMODDER MODULE')
-        import renpy.renmodder
-        renpy.renmodder.bootstrap.run(renpy_base)
-        return
-    else:
-        print("[RENMODDER] RENMODDER BOOTSTRAPING: STARTING ORIGINAL REN'PY BOOTSTRAPING...")
+	    print('\\n[RENMODDER] RENMODDER BOOTSTRAPING: LOADING RENMODDER MODULE')
+	    import renpy.renmodder
+	    renpy.renmodder.bootstrap.run(renpy_base)
+	    return
+	else:
+	    print("[RENMODDER] RENMODDER BOOTSTRAPING: STARTING ORIGINAL REN'PY BOOTSTRAPING...")
     #35516 RENMODDER MOD PATCH
 
     # Other original bootstrap() function code...
@@ -86,7 +92,7 @@ def run(renpy_base):
     # other code...
 ```
 
-> 💡 ***TIP: All replaced code can be found in `this_repo/patches/__mod_patch_renmodder/` and in `patches/mod_patch.py` or if you have patched your game: `your_game_dir/renpy/renmodder/`***
+> 💡 ***TIP: All replaced code can be found in `patches/__mod_patch_renmodder/` and in `patches/mod_patch.py` or if you have patched your game: `your_game_dir/renpy/renmodder/`***
 
 `renpy.renmodder.main()` is just `renpy.main()` but with changes and runs the custom `renpy.renmodder.presplash.PresplashVenom.start()` function as `renpy.display.presplash.presplash()`
 
@@ -156,7 +162,7 @@ Example: `patches/__mod_patch_renmodder/main.py`
 ```python
 # ...
 import renpy.renmodder.mod_api as mod_api
-# import mod_api # For coding you can use this
+# import mod_api # For autocompletion you can use this
 # ...
 ```
 
@@ -180,9 +186,9 @@ class TestMod(Mod):
             failed += 1
 # ...
 ```
-4. In result you have to have this code:
+4. In result you have to have code like this:
 ```python
-#LOAD_WITH_GLOBALS # Tell RenModder to load all memory into global, not local one
+#LOAD_WITH_GLOBALS # Tell RenModder to load all memory into global, not local one. Can be disabled.
 from renpy.renmodder.mod import Mod
 import renpy.renmodder.mod_api as mod_api
 
@@ -228,4 +234,11 @@ class APITestMod(Mod):
         self.__mod_log("Unloading...")
 ```
 
+## Mod API functions
+***Mod api have a lot of functions. Here is the list of all that***
 
+| Name | Func Name | Uses server | Arguments | Notes |
+| :------ | :-----: | :-----: | :-----: | ------: |
+| Wait for mod | wait_mod | YES | client, token, mod_name, run_loaded | run_loaded - functions to run after waited \| mod_name - Mod system name to wait it |
+| Get loaded mods | get_loaded_mods | YES | client, token | wait_mod uses this function |
+| Run Ren'Py code | run_renpy | 

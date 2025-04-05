@@ -5,8 +5,9 @@ from struct import pack, unpack
 from renpy.renmodder.mod_api_proto import *
 from renpy.renmodder.config import *
 
+renpy = None
+
 def modapi_log(text, end='\n'):
-    """Log function for Mod API"""
     print(f"[RENMODDER] Mod API: {text}", end=end)
 
 def parse(*args, **kwargs):
@@ -23,10 +24,19 @@ def load_mod_api():
     mod_api_loaded = True
     modapi_log("Mod API loaded successfully.")
 
-def run_renpy_code(code, linenumber):
+### Not Uses Mod API ###
+def GetLabel(name):
+    """Get label by name"""
+    return renpy.game.script.lookup(name)
+
+
+
+def run_renpy(code, linenumber):
     """Run Ren'Py code"""
     parse(code, linenumber=linenumber)
 
+
+### Uses Mod API ###
 def register(mod_name, version, ID):
     """Register a new mod in RenModder Mod API system"""
     client = socket()
@@ -117,14 +127,29 @@ def get_loaded_mods(client, token):
         modapi_log(f"Failed to get loaded mods: {e}")
         return []
 
-def wait_for_mod(client, token, mod_name):
-    """Wait for a specific mod to load by checking GET_LOADED_MODS in a loop"""
+def wait_mod(client, token, mod_name, run_loaded, sleep_time=0.15):
+    """Wait for a specific mod to load in a loop
+    Args:
+        client - socket client
+        token - mod token
+        mod_name - name of the mod to wait for
+        run_loaded - function to run when the mod is loaded
+        sleep_time - time to sleep between checks (default: 0.15)
+    """
+    modapi_log(f"Waiting for mod {mod_name} to load...")
+    attempts = 0
     while True:
         mods = get_loaded_mods(client, token)
         if mod_name in mods:
             return True
         
-        sleep(0.3)
+        sleep(sleep_time)
+        attempts += 1
+        if attempts > 100:
+            modapi_log(f"Failed to wait for mod {mod_name} load after 500 attempts")
+            return False
+
+wait_for_mod = wait_mod # For old mods support. Added in v1.4 Jelly
 
 def send_action(client, token, action_type, data=None):
     """Send actions to RenModder Mod API server"""
@@ -152,3 +177,6 @@ def send_action(client, token, action_type, data=None):
     except Exception as e:
         modapi_log(f"Failed to send action: {e}")
         return False
+
+
+run_renpy_code = run_renpy # Old mods support. Added in v1.4 Jelly

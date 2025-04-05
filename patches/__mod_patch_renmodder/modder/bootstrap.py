@@ -1,4 +1,8 @@
 from __future__ import division, absolute_import, with_statement, print_function, unicode_literals
+
+global _dir
+_dir = dir
+
 import sys
 import renpy.renmodder.presplash # type: ignore
 import os
@@ -8,20 +12,30 @@ from .main import main
 from threading import Thread
 from time import time, sleep
 
-from renpy.renmodder.mod import Mod # Import Mod so mod classes can be child of this
+from renpy.renmodder.mod import Mod # Import Mod so mods classes can be child of this
 from renpy.renmodder.config import MODS_PATH, BIND_TO, BIND_PORT
 from renpy.renmodder.mod_api_server import APIServer
 
-# try:
-    # from tkinter.messagebox import askquestion as aq
-# except Exception:
-#     def aq(*args, **kwargs):
-#         log("FAILED TO LOAD TKINTER.MESSAGEBOX !!")
-#         log("USING DEFAULT: 'yes'")
-#         log("IF YOU ARE USING LINUX, TRY TO INSTALL 'TK' MODULE (On arch (extra): pacman -S tk)")
-#         return 'yes'
+sys.path.append(sys.path[0]+'/modder_resources/libraries')
 
-from tkinter.messagebox import askquestion as aq
+try:
+    # For some games with custom/old Ren'Py (like 8.0.3)
+    import __main__
+    renpy.__main__ = __main__
+except ImportError:
+    pass
+
+try:
+    import tkinter
+    aq = tkinter.messagebox.askquestion
+    # from tkinter.messagebox import askquestion as aq
+except ImportError:
+    def aq(*args, **kwargs):
+        log("FAILED TO LOAD TKINTER.MESSAGEBOX !!")
+        log("USING DEFAULT: 'yes'")
+        return 'yes'
+
+# from tkinter.messagebox import askquestion as aq
 
 FSENENCODING = FSENCODING = sys.getfilesystemencoding() or "utf-8"
 
@@ -102,17 +116,23 @@ def load_mod(file_content):
 mods = []
 def run(renpy_base):
     with_renmodder = aq("Enable RenModder ?",
-        "Do you want to load game with RenModder ? \
-            (If not, it disables all mods for this run)")
+        "Do you want to load game with RenModder ?\n\
+        (If not, it disables all RenModder for this run)")
 
     global renpy
+    renpy.renmodder_disabled = False
+    # with_renmodder = 'no' # For testing
     if not with_renmodder == 'yes':
-        renpy.bootstrap.bootstrap(real_one=True)
+        renpy.renmodder_disabled = True
+        renpy.bootstrap.bootstrap(renpy_base, real_one=True)
 
+    log(f"{sys.path=}")
     load_time = time()
     
     if renpy_base.endswith("/"):
         renpy_base = renpy_base[:-1] # Delete "/" at the end
+
+    log(f"Using Ren'Py version: {renpy.version_only}")
 
     log(f"Renpy base: {renpy_base}")
     log("Starting mod API server...")
@@ -124,7 +144,7 @@ def run(renpy_base):
     log("Waiting for API server to start...")
     while not api_server.loaded:
         log("API Server is not loaded, waiting...")
-        sleep(0.5) # 0.5 - for server successfully load and mods don't raise "Broken pipe"
+        sleep(0.05) # 0.05 - for server successfully load and mods don't raise "Broken pipe"
     
     log("Preparing loading mods...")
     mods_path = MODS_PATH.replace("~", renpy_base)
@@ -246,7 +266,10 @@ You may be using a system install of python. Please run {0}.sh,
 
         raise
     
-    gamedir = renpy.__main__.path_to_gamedir(basedir, name)
+    try:
+        gamedir = renpy.__main__.path_to_gamedir(basedir, name)
+    except AttributeError:
+        gamedir = __main__.path_to_gamedir(basedir, name) # type: ignore
 
     # If we're not given a command, show the presplash.
     if args.command == "run" and not renpy.mobile:
@@ -316,7 +339,10 @@ You may be using a system install of python. Please run {0}.sh,
                 renpy.config.gamedir = gamedir
                 renpy.config.args = [ ] # type: ignore
 
-                renpy.config.logdir = renpy.__main__.path_to_logdir(basedir)
+                try:
+                    renpy.config.logdir = renpy.__main__.path_to_logdir(basedir)
+                except AttributeError:
+                    renpy.config.logdir = basedir
 
                 if not os.path.exists(renpy.config.logdir):
                     os.makedirs(renpy.config.logdir, 0o777)

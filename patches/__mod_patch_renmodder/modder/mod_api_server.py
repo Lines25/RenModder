@@ -3,6 +3,7 @@ from threading import Thread
 from struct import pack, unpack
 from renpy.renmodder.config import VERBOSE_LOG
 from renpy.renmodder.mod_api_proto import *
+from renpy.renmodder.events import *
 
 
 def log(text, end='\n'):
@@ -48,12 +49,24 @@ class APIServerHandler:
             self.conn.close()
 
     def register_mod(self, mod_name, mod_version, mod_id):
+        if not mod_name or not isinstance(mod_name, str) or not mod_version or not isinstance(mod_version, int) or not mod_id or not isinstance(mod_id, int):
+            vlog("Invalid mod details provided")
+            self.conn.send(pack('B', ACTION_RESULT_FAIL))
+            return
+        
         token = f"{mod_name}-{mod_version}-{mod_id}"
+        
+        if token in self.mods:
+            vlog(f"Mod already registered: {token}")
+            self.conn.send(token.encode())
+            return
+        
         self.mods[token] = {
             "name": mod_name,
             "version": mod_version,
             "id": mod_id
         }
+        
         vlog(f"Mod registered: {mod_name} (v{mod_version}), ID: {mod_id}")
         self.conn.send(token.encode())
 
@@ -66,6 +79,11 @@ class APIServerHandler:
     def handle_event_subscription(self):
         token = self.conn.recv(1024).decode()
         event_type = unpack('B', self.conn.recv(1))[0]
+        if not token or not isinstance(token, str) or len(token) != 36:
+            vlog("Invalid token provided")
+            self.conn.send(pack('B', ACTION_RESULT_FAIL))
+            return
+
         vlog(f"Subscribed to event type {event_type} for token {token}")
         self.conn.send(b"Subscription successful")
 
@@ -74,7 +92,7 @@ class APIServer:
     stop = False
     loaded = False
 
-    def __init__(self, host='localhost', port=8000):
+    def __init__(self, host='localhost', port=6572):
         self.host = host
         self.port = port
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
